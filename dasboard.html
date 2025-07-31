@@ -27,6 +27,27 @@
             // Tampilkan username
             document.getElementById('username').textContent = currentUser.username;
         }
-    </script>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script>
+  const supabase = supabase.createClient(
+    'https://waxqseyozmtelqplkjbl.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  );
+
+  // Cek session aktif
+  supabase.auth.getSession().then(({ data }) => {
+    if (!data.session) window.location.href = 'index.html';
+    else {
+      document.getElementById('username').textContent = data.session.user.user_metadata.username;
+    }
+  });
+
+  // Fungsi logout
+  async function logout() {
+    await supabase.auth.signOut();
+    window.location.href = 'index.html';
+  }
+          </script>
 </body>
 </html>
