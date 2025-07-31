@@ -71,7 +71,7 @@
         <div id="login-form" class="form-container active">
             <h2>Login</h2>
             <form id="login">
-                <input type="text" id="login-username" placeholder="Username" required>
+                <input type="email" id="login-email" placeholder="Email" required>
                 <input type="password" id="login-password" placeholder="Password" required>
                 <p id="login-error" class="error"></p>
                 <button type="submit">Login</button>
@@ -93,9 +93,13 @@
         </div>
     </div>
 
+    <!-- Load Supabase JS SDK -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
-        // Simpan data user (sementara di localStorage)
-        const users = JSON.parse(localStorage.getItem('users')) || [];
+        // Initialize Supabase
+        const supabaseUrl = 'https://waxqseyozmtelqplkjbl.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         // Toggle form
         function showForm(formType) {
@@ -105,52 +109,63 @@
         }
 
         // Handle Register
-        document.getElementById('register').addEventListener('submit', function(e) {
+        document.getElementById('register').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const username = document.getElementById('reg-username').value;
             const email = document.getElementById('reg-email').value;
             const password = document.getElementById('reg-password').value;
             
-            // Validasi sederhana
-            if (users.some(user => user.username === username)) {
-                document.getElementById('reg-error').textContent = 'Username sudah digunakan';
-                return;
+            // Clear previous errors
+            document.getElementById('reg-error').textContent = '';
+            
+            try {
+                // Register user with Supabase
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            username: username
+                        }
+                    }
+                });
+
+                if (error) throw error;
+                
+                alert('Pendaftaran berhasil! Silakan cek email untuk verifikasi.');
+                showForm('login');
+                document.getElementById('register').reset();
+            } catch (error) {
+                document.getElementById('reg-error').textContent = error.message;
             }
-            
-            if (users.some(user => user.email === email)) {
-                document.getElementById('reg-error').textContent = 'Email sudah terdaftar';
-                return;
-            }
-            
-            // Simpan user baru
-            users.push({ username, email, password });
-            localStorage.setItem('users', JSON.stringify(users));
-            
-            alert('Pendaftaran berhasil! Silakan login.');
-            showForm('login');
-            document.getElementById('register').reset();
         });
 
         // Handle Login
-        document.getElementById('login').addEventListener('submit', function(e) {
+        document.getElementById('login').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const username = document.getElementById('login-username').value;
+            const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
             
-            const user = users.find(u => u.username === username && u.password === password);
+            // Clear previous errors
+            document.getElementById('login-error').textContent = '';
             
-            if (user) {
-                // Simpan data user yang login
-                localStorage.setItem('currentUser', JSON.stringify(user));
+            try {
+                // Login with Supabase
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) throw error;
                 
-                // Redirect ke dashboard (file dashboard.html)
+                // Redirect to dashboard
                 window.location.href = 'dashboard.html';
-            } else {
-                document.getElementById('login-error').textContent = 'Username atau password salah';
+            } catch (error) {
+                document.getElementById('login-error').textContent = error.message;
             }
         });
     </script>
 </body>
-          </html>
+    </html>
