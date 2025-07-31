@@ -1,53 +1,171 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Slot - Login & Daftar</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 20px;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
         }
-        .welcome {
-            color: green;
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+        .form-container {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .switch-btn {
+            background: none;
+            color: #007bff;
+            text-decoration: underline;
+            border: none;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .error {
+            color: red;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <h1 class="welcome">Selamat Datang, <span id="username"></span>!</h1>
-    <p>Ini adalah halaman dashboard.</p>
-    
-    <script>
-        // Ambil data user yang login
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    <div class="container">
+        <h1>Game Slot</h1>
         
-        if (!currentUser) {
-            // Jika belum login, redirect ke index.html
-            window.location.href = 'index.html';
-        } else {
-            // Tampilkan username
-            document.getElementById('username').textContent = currentUser.username;
+        <!-- Login Form -->
+        <div id="login-form" class="form-container active">
+            <h2>Login</h2>
+            <form id="login">
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <p id="login-error" class="error"></p>
+                <button type="submit">Login</button>
+            </form>
+            <button class="switch-btn" onclick="showForm('register')">Belum punya akun? Daftar</button>
+        </div>
+        
+        <!-- Register Form -->
+        <div id="register-form" class="form-container">
+            <h2>Daftar</h2>
+            <form id="register">
+                <input type="text" id="reg-username" placeholder="Username" required>
+                <input type="email" id="reg-email" placeholder="Email" required>
+                <input type="password" id="reg-password" placeholder="Password" required>
+                <p id="reg-error" class="error"></p>
+                <button type="submit">Daftar</button>
+            </form>
+            <button class="switch-btn" onclick="showForm('login')">Sudah punya akun? Login</button>
+        </div>
+    </div>
+
+    <!-- Load Supabase JS SDK -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://waxqseyozmtelqplkjbl.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Toggle form
+        function showForm(formType) {
+            document.getElementById('login-form').classList.remove('active');
+            document.getElementById('register-form').classList.remove('active');
+            document.getElementById(`${formType}-form`).classList.add('active');
         }
 
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script>
-  const supabase = supabase.createClient(
-    'https://waxqseyozmtelqplkjbl.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-  );
+        // Handle Register
+        document.getElementById('register').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            
+            // Clear previous errors
+            document.getElementById('reg-error').textContent = '';
+            
+            try {
+                // Register user with Supabase
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            username: username
+                        }
+                    }
+                });
 
-  // Cek session aktif
-  supabase.auth.getSession().then(({ data }) => {
-    if (!data.session) window.location.href = 'index.html';
-    else {
-      document.getElementById('username').textContent = data.session.user.user_metadata.username;
-    }
-  });
+                if (error) throw error;
+                
+                alert('Pendaftaran berhasil! Silakan cek email untuk verifikasi.');
+                showForm('login');
+                document.getElementById('register').reset();
+            } catch (error) {
+                document.getElementById('reg-error').textContent = error.message;
+            }
+        });
 
-  // Fungsi logout
-  async function logout() {
-    await supabase.auth.signOut();
-    window.location.href = 'index.html';
-  }
-          </script>
+        // Handle Login
+        document.getElementById('login').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            // Clear previous errors
+            document.getElementById('login-error').textContent = '';
+            
+            try {
+                // Login with Supabase
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (error) throw error;
+                
+                // Redirect to dashboard
+                window.location.href = 'dashboard.html';
+            } catch (error) {
+                document.getElementById('login-error').textContent = error.message;
+            }
+        });
+    </script>
 </body>
 </html>
